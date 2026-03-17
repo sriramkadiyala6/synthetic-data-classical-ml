@@ -12,13 +12,13 @@
 
 ## Overview
 
-The "model collapse" phenomenon where models trained on synthetic data degrade over generations is well-studied for large language models. But what happens when you use LLM-generated synthetic data to train *classical* ML models like logistic regression, SVMs, or XGBoost? This project systematically investigates whether LLM-generated synthetic tabular data can substitute for, augment, or ultimately hurt classical ML performance compared to real data and traditional synthetic data generation methods.
+The "model collapse" phenomenon — where models trained on synthetic data degrade over generations — is well-studied for large language models. But what happens when you use LLM-generated synthetic data to train *classical* ML models like logistic regression, SVMs, or XGBoost? This project systematically investigates whether LLM-generated synthetic tabular data can substitute for, augment, or ultimately hurt classical ML performance compared to real data and traditional synthetic data generation methods.
 
 ## Research Questions
 
 1. Does training classical ML models on LLM-generated synthetic tabular data help, hurt, or match training on real data?
 2. How does the answer change with dataset size, synthetic-to-real ratio, and model type?
-3. How does LLM-generated synthetic data compare against purpose-built synthetic data methods (SMOTE, CTGAN)?
+3. How does LLM-generated synthetic data compare against traditional synthetic data methods like SMOTE?
 
 ## Datasets
 
@@ -37,7 +37,7 @@ We evaluate across three well-known tabular classification datasets from the UCI
 - **Approach:** Structured prompting with schema descriptions, feature distributions, and sample rows to generate realistic synthetic tabular data
 - **Validation:** Statistical checks on generated data (range validation, distribution matching, inter-column relationship preservation)
 
-### Traditional Methods
+### Traditional Method
 - **SMOTE** (Synthetic Minority Oversampling Technique) — interpolation-based oversampling via `imbalanced-learn`
 
 ## Models
@@ -53,7 +53,7 @@ We evaluate across three well-known tabular classification datasets from the UCI
 
 ### Notation
 - **RD** = Real Data
-- **SD** = Synthetic Data (LLM-generated, SMOTE, or CTGAN/TVAE)
+- **SD** = Synthetic Data (LLM-generated or SMOTE)
 
 ### Experiment 1: Full Data Regime (Substitution)
 All real training data is available. We test whether replacing portions with synthetic data changes performance.
@@ -76,12 +76,8 @@ Only a small fraction of real data is available (max of 10% of original samples 
 
 Same RD:SD ratios as Experiment 1, applied to the reduced real data pool.
 
-### Experiment 3: Comparison Across Synthetic Methods
-For each experiment above, repeat using:
-- LLM-generated synthetic data
-- SMOTE synthetic data
-- CTGAN synthetic data
-- TVAE synthetic data (extension)
+### Experiment 3: LLM vs SMOTE Comparison
+For each experiment above, repeat using both LLM-generated and SMOTE synthetic data to compare performance.
 
 ### Hyperparameter Tuning
 - Independent cross-validation for each RD:SD ratio and synthetic method
@@ -101,21 +97,18 @@ synthetic-data-classical-ml/
 │   ├── raw/                    # Original datasets
 │   ├── synthetic/
 │   │   ├── llm/                # LLM-generated synthetic data
-│   │   ├── smote/              # SMOTE-generated synthetic data
-│   │   └── ctgan/              # CTGAN-generated synthetic data
+│   │   └── smote/              # SMOTE-generated synthetic data
 │   └── processed/              # Train/test splits
 ├── notebooks/
 │   ├── 01_data_exploration.ipynb
 │   ├── 02_llm_generation.ipynb
 │   ├── 03_smote_generation.ipynb
-│   ├── 04_ctgan_generation.ipynb
-│   ├── 05_experiments.ipynb
-│   └── 06_analysis.ipynb
+│   ├── 04_experiments.ipynb
+│   └── 05_analysis.ipynb
 ├── src/
 │   ├── data_preprocessing.py
 │   ├── llm_generator.py
 │   ├── smote_generator.py
-│   ├── ctgan_generator.py
 │   ├── train_models.py
 │   ├── evaluate.py
 │   └── utils.py
@@ -157,7 +150,6 @@ pip install -r requirements.txt
 3. Chawla, N.V., et al. "SMOTE: Synthetic Minority Over-sampling Technique." JAIR, 2002.
 4. Fang, Y., et al. "Large Language Models on Tabular Data — A Survey." arXiv:2402.17944, 2024.
 5. Singh, A., et al. "Are LLMs Naturally Good at Synthetic Tabular Data Generation?" arXiv:2406.14541, 2024.
-6. Wen, Z., et al. "HARMONIC: Harnessing LLMs for Tabular Data Synthesis and Privacy Protection." NeurIPS D&B, 2024.
 
 ## License
 
