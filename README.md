@@ -145,6 +145,8 @@ pip install -r requirements.txt
 
 ## References
 
+Literature Survey link: https://docs.google.com/document/d/1PcD8RcFZA7kLjwPb3R545SM0wWc5nM_gsX65Bq0AAQg/edit?usp=sharing
+
 1. Borisov, V., et al. "Language Models are Realistic Tabular Data Generators." ICLR, 2023. (GReaT)
 2. Xu, L., et al. "Modeling Tabular data using Conditional GAN." NeurIPS, 2019. (CTGAN)
 3. Chawla, N.V., et al. "SMOTE: Synthetic Minority Over-sampling Technique." JAIR, 2002.
