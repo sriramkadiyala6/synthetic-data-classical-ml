@@ -1,3 +1,5 @@
+#pick 5000 rows for the adult dataset
+
 import pandas as pd
 
 df = pd.read_csv("adult_synthetic_combined.csv")

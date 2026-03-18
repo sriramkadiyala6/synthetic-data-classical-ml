@@ -1,3 +1,5 @@
+# To merge CSV files, for adult dataset
+
 import pandas as pd
 import glob
 
