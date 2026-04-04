@@ -82,6 +82,8 @@ paths = [
 X_raw, y_raw = import_and_combine_heart(paths, impute=True)
 X_tr_raw, X_ts_raw, y_tr_raw, y_ts = train_test_split(X_raw, y_raw, test_size=TEST_SIZE, random_state=RANDOM_SEED, stratify=y_raw)
 
+heart_n = len(X_tr_raw)
+
 # Import synthetic & ctgan data
 X_syn_raw, y_syn = import_heart_synthetic('data/synthetic/LLM/Heart Disease Dataset Files/heart_disease_synthetic_combined.csv')
 X_ctgan_raw, y_ctgan = load_ctgan('data/synthetic/CTGAN/heart_ctgan.csv')
@@ -89,11 +91,13 @@ X_ctgan_raw, y_ctgan = load_ctgan('data/synthetic/CTGAN/heart_ctgan.csv')
 # Create and apply encoder to process data to ML format
 X_tr, encoder = preprocess_heart(X_tr_raw)
 X_ts = preprocess_heart_encoder(X_ts_raw, encoder)
-X_syn = preprocess_heart_encoder(X_syn_raw, encoder)
-X_ctgan = preprocess_heart_encoder(X_ctgan_raw, encoder)
+X_syn_enc = preprocess_heart_encoder(X_syn_raw, encoder)
+X_syn, y_syn = sample_n_rows(X_syn_enc, y_syn, n=heart_n)
+X_ctgan_enc = preprocess_heart_encoder(X_ctgan_raw, encoder)
+X_ctgan, y_ctgan = sample_n_rows(X_syn_enc, y_ctgan, n=heart_n)
 
 # Trim down training data
-X_tr_trim, y_tr_trim = sample_n_rows(X_tr, y_tr_raw, n=NUM_ROWS)
+X_tr_trim, y_tr_trim = sample_n_rows(X_tr, y_tr_raw, n=heart_n)
 
 # Generate SMOTE (runs on processed data)
 ## Consider removing because it only generates classes of imbalance, otherwise, will need to artificially create imbalanced set to work on, and re-combine.
