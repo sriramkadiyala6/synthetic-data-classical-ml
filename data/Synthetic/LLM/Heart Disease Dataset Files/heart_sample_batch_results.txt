@@ -1,0 +1,177 @@
+Heart Disease — Sample Rows Only (No Distribution Constraints)
+================================================================
+
+Prompt Strategy: Schema + 100 real sample rows, NO explicit distribution targets
+LLM: Claude Sonnet 4.6
+Target: 5,000 rows. Final: 4,125 unique rows after deduplication.
+
+================================================================
+BATCH-BY-BATCH RESULTS
+================================================================
+
+Batch 1:
+  Target: 52/48 | Sex M: 69.2% | thal=6: 9.2%
+  Duplicates: 10 | Memorization: 0
+  Notes: First batch where duplicates appeared. 14 cols + limited
+  value ranges = collision-prone.
+
+Batch 2:
+  Target: 50.6/49.4 | Sex M: 68.6% | thal=6: 6.0%
+  Duplicates: 15 | Memorization: 0
+  Notes: Duplicate count climbing.
+
+Batch 3:
+  Target: 51/49 | Sex M: 74.2% | thal=6: 7.8%
+  Duplicates: 19 | Memorization: 0
+  Notes: Duplicates worse, distributions stable.
+
+Batch 4:
+  Target: 51/49 | Sex M: 74.4% | thal=6: 7.4%
+  Duplicates: 0 | Memorization: 0
+  Notes: Clean batch. No duplicates this round.
+
+REJECTED Batch (memorization):
+  Memorization: 95 (~19%)
+  Notes: Claude reproduced sample rows verbatim. Discarded entirely.
+  Likely caused by long context, Claude started regurgitating
+  uploaded sample data instead of generating new rows.
+
+Batch 5 (regenerated):
+  Target: 50.2/49.8 | Sex M: 71.2% | thal=6: 4.2%
+  Duplicates: 5 | Memorization: 0
+  Notes: Regenerated in fresh chat. Clean.
+
+Batch 6:
+  Target: 50.2/49.8 | Sex M: 71.2% | thal=6: 4.6%
+  Duplicates: 14 | Memorization: 0
+  Notes: Distributions nearly identical to batch 5.
+
+REJECTED Batch (heavy duplicates):
+  Duplicates: 82 (~16%)
+  Notes: Came from a script-based generation attempt. Rejected.
+
+Batch 7:
+  Duplicates: 45 | Memorization: 0
+  Notes: High duplicates but no memorization. Kept and deduplicated
+  at the end.
+
+Batch 8:
+  Target: 50.6/49.4 | Sex M: 67.0% | thal=6: 6.2%
+  Duplicates: 0 | Memorization: 0
+  Notes: Cleanest batch. Best output of the run.
+
+REJECTED Batch (memorization):
+  Memorization: 87
+  Notes: Another regurgitation event. Discarded.
+
+REJECTED Batch (mass memorization):
+  Memorization: 422 | Duplicates: 175 | Invalid ca: 6
+  Notes: Worst batch by far. Discarded entirely.
+
+Batch 9:
+  Target: 50/50 | Sex M: 73.5% | thal=6: 11.0%
+  Duplicates: 0 | Memorization: 0
+  Notes: Final batch. Clean. cp=1 missing entirely (structural gap).
+
+================================================================
+COMBINED RESULTS (after merge + deduplication)
+================================================================
+
+Total rows generated: 4,373
+After removing memorized rows: 4,373 (memorized batches were discarded earlier)
+After deduplication: 4,125
+
+Final dataset: 4,125 unique synthetic rows
+Memorization: 0
+Missing values: 0
+Range/category violations: 0
+
+================================================================
+DIFFICULTIES AND LIMITATIONS
+================================================================
+
+1. SMALL FEATURE SPACE → DUPLICATE COLLISIONS
+Heart Disease has only 14 columns, most of which are binary or have
+3-4 possible values. With this limited combinatorial space, randomly
+generated rows collide frequently. Adult Income (15 cols including
+fnlwgt with millions of unique values) and Credit Card Default
+(24 cols with continuous bills/payments) had zero duplicates.
+Heart Disease consistently produced 5-19 duplicates per 500-row batch.
+
+This is itself a finding: LLM synthetic generation is harder for
+datasets with small categorical feature spaces. There's a structural
+limit on diversity that no prompt engineering can fully overcome.
+
+2. MEMORIZATION RECURRENCE
+The real Cleveland dataset is well-known and tiny (303 rows), so
+Claude has seen it many times during training. When we provided 100
+sample rows in the prompt, Claude periodically reverted to copying
+those rows verbatim instead of generating new ones.
+
+We had to discard 3 batches entirely:
+  - One with 95 exact matches (~19%)
+  - One with 87 exact matches (~17%)
+  - One with 422 exact matches (~84%)
+
+Starting fresh chats helped reset this behavior. Adding "Do NOT
+reproduce any rows from the attached sample" to the prompt reduced
+but did not eliminate the issue.
+
+This is a real concern for using LLMs to generate synthetic data
+from small, well-known datasets. The model's prior knowledge of the
+dataset competes with the instruction to generate new data.
+
+3. CLAUDE WROTE CODE INSTEAD OF CSV
+Multiple times Claude tried to "solve" the generation task by writing
+Python scripts to sample from distributions instead of just outputting
+CSV rows directly. We had to explicitly add "Do NOT write code or
+scripts. Output the synthetic data directly as CSV rows" to the prompt.
+
+This appears to be a behavior where the LLM treats the task as a
+programming problem rather than a generation problem. The scripts it
+wrote were also worse than direct generation, they produced more
+duplicates and less natural variation.
+
+4. STRUCTURAL DISTRIBUTION GAPS
+Without distribution constraints, some categories were systematically
+underrepresented. Final batch had 0% cp=1 (real has ~7.6%). Earlier
+batches frequently overrepresented thal=6 (rare in real data ~6%,
+sometimes 9-11% in synthetic).
+
+5. ROW MERGE ISSUES
+At one point during batch generation, two rows got concatenated on a
+single line with no newline between them, causing the validation
+script to fail with a parser error. Required manual inspection and
+correction. This is a fragility of relying on LLM-generated text
+output rather than structured data formats.
+
+6. TIME COST
+Heart Disease generation took several hours of active work, much
+longer than Adult Income or Credit Card Default. The combination of
+duplicates, memorization, and Claude attempting to write scripts
+meant many batches had to be discarded and regenerated.
+
+================================================================
+KEY OBSERVATIONS (vs Constrained Prompt)
+================================================================
+
+                        Constrained      Unconstrained     Real
+Disease rate:           44.3%            ~50% (varies)     46.5%
+Sex M:                  68.6%            ~71%              68.0%
+cp=4:                   47.7%            ~49.5%            47.5%
+thal=3:                 55.7%            ~52%              55.1%
+ca=0:                   60.9%            ~50%              59.1%
+Age mean:               53.5             ~53.5             54.4
+Memorization:           0                ~10% across runs  —
+Duplicates:             0                2-4% per batch    —
+
+Tradeoff observed:
+  Constrained prompt → cleaner output, no memorization, no duplicates
+  Sample rows prompt → memorization risk, duplicate collisions, but
+  arguably more "natural" because Claude is learning patterns from
+  examples instead of explicit frequency targets
+
+Heart Disease was the hardest of the three datasets to generate
+without distribution constraints. The combination of small feature
+space, well-known dataset (high memorization risk), and limited
+training data made unconstrained generation particularly challenging.

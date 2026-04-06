@@ -1,0 +1,89 @@
+Credit Card Default — Sample Rows Only (No Distribution Constraints)
+======================================================================
+
+Prompt Strategy: Schema + 100 real sample rows, NO explicit distribution targets
+LLM: Claude Sonnet 4.6
+Batches: 10 x 500 rows = 5,000 total
+
+Batch 1:
+  Default: 74.4/25.6 | Female: 54.0% | LIMIT_BAL mean: 197,400
+  PAY>BILL violations: 288 | BILL>LIMIT: 14 | High delay no default: 20
+  All validations passed. 0 memorization, 0 errors.
+
+Batch 2:
+  Default: 71.0/29.0 | Female: 58.8% | LIMIT_BAL mean: 181,560
+  PAY>BILL violations: 233 | BILL>LIMIT: 7 | High delay no default: 27
+  All validations passed.
+
+Batch 3:
+  Default: 70.0/30.0 | Female: 56.2% | LIMIT_BAL mean: 170,040
+  PAY>BILL violations: 249 | BILL>LIMIT: 0 | High delay no default: 28
+  All validations passed.
+
+Batch 4:
+  Default: 70.6/29.4 | Female: 58.8% | LIMIT_BAL mean: 181,880
+  PAY>BILL violations: 232 | BILL>LIMIT: 2 | High delay no default: 36
+  All validations passed.
+
+Batch 5:
+  Default: 74.0/26.0 | Female: 59.8% | LIMIT_BAL mean: 170,540
+  PAY>BILL violations: 226 | BILL>LIMIT: 4 | High delay no default: 27
+  All validations passed.
+
+Batch 6:
+  Default: 72.6/27.4 | Female: 57.2% | LIMIT_BAL mean: 167,400
+  PAY>BILL violations: 229 | BILL>LIMIT: 1 | High delay no default: 30
+  All validations passed.
+
+Batch 7:
+  (duplicate of batch 8 — likely same file validated twice, skipped)
+
+Batch 8:
+  Default: 72.8/27.2 | Female: 56.4% | LIMIT_BAL mean: 165,300
+  PAY>BILL violations: 247 | BILL>LIMIT: 1 | High delay no default: 32
+  All validations passed.
+
+Batch 9:
+  (duplicate of batch 8 — likely same file validated twice, skipped)
+
+Batch 10:
+  Default: 74.8/25.2 | Female: 59.0% | LIMIT_BAL mean: 168,280
+  PAY>BILL violations: 249 | BILL>LIMIT: 0 | High delay no default: 25
+  All validations passed.
+
+Combined (5,000 rows):
+  Default: 72.2/27.8 | Female: 57.9% | LIMIT_BAL mean: 174,052
+  PAY>BILL violations: 2,458 | BILL>LIMIT: 30 | High delay no default: 279
+  All validations passed. 0 memorization, 0 duplicates.
+
+======================================================================
+KEY OBSERVATIONS (vs Constrained Prompt)
+======================================================================
+
+                        Constrained      Unconstrained     Real
+Default rate (0):       78.0%            72.2%             77.9%
+Female (SEX=2):         59.9%            57.9%             60.4%
+University (EDU=2):     46.6%            55.0%             46.8%
+Age mean:               35.1             35.9              35.5
+LIMIT_BAL mean:         145,818          174,052           167,484
+PAY_0 = 0:              43.0%            49.0%             49.1%
+PAY>BILL violations:    3,029            2,458             —
+BILL>LIMIT violations:  141              30                —
+
+Key Findings:
+- Default rate drifts to ~72/28 without constraints (real is 78/22)
+  Claude overrepresents the minority class (defaults) without explicit targets
+- LIMIT_BAL mean is CLOSER to real (174K vs real 167K) than constrained (146K)
+  Sample rows helped the LLM learn realistic credit limits
+- PAY_0 = 0 distribution is closer to real (49% vs real 49%) than constrained (43%)
+- PAY>BILL violations are actually FEWER (2,458 vs 3,029)
+  Sample rows may have helped Claude learn payment-bill relationships
+- BILL>LIMIT violations dropped dramatically (30 vs 141)
+  Sample rows clearly helped Claude learn bill-limit relationships
+- Education distribution shifted — University overrepresented at 55% vs real 47%
+- Batch-to-batch variance in default rate: 70-75% (wider than constrained)
+
+Interesting tradeoff:
+  Constrained prompt → better marginal distributions (default rate, education)
+  Sample rows prompt → better logical consistency (fewer PAY>BILL, BILL>LIMIT violations)
+  This is itself a finding about prompt engineering strategies.

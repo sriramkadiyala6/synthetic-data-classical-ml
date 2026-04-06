@@ -1,0 +1,82 @@
+Adult Income — Sample Rows Only (No Distribution Constraints)
+================================================================
+
+Prompt Strategy: Schema + 100 real sample rows, NO explicit distribution targets
+LLM: Claude Sonnet 4.6
+Batches: 10 x 500 rows = 5,000 total
+
+Batch 1:
+  Income: 69/31 | Private: 71.8% | Hours=40: 207/500 (41.4%)
+  All validations passed. 0 memorization, 0 errors.
+
+Batch 2:
+  Income: 75.6/24.4 | Private: 71.0% | Hours=40: 151/500 (30.2%)
+  Hours=45: 63, Hours=50: 59 — overrepresented
+  All validations passed.
+
+Batch 3:
+  Income: 75.4/24.6 | Private: 74.0% | Hours=40: 174/500 (34.8%)
+  Hours=50: 59, Hours=45: 48
+  All validations passed.
+
+Batch 4:
+  Income: 75.4/24.6 | Private: 72.0% | Hours=40: 167/500 (33.4%)
+  Hours=50: 63, Hours=45: 51
+  All validations passed.
+
+Batch 5:
+  Income: 75.8/24.2 | Private: 69.8% | Hours=40: 155/500 (31.0%)
+  Hours=45: 56, Hours=50: 56
+  All validations passed.
+
+Batch 6:
+  Income: 72.6/27.4 | Private: 72.2% | Hours=40: 159/500 (31.8%)
+  Hours=50: 59, Hours=45: 58
+  All validations passed.
+
+Batch 7:
+  Income: 75.2/24.8 | Private: 74.0% | Hours=40: 153/500 (30.6%)
+  Hours=45: 72, Hours=50: 48
+  All validations passed.
+
+Batch 8:
+  Income: 73.0/27.0 | Private: 70.4% | Hours=40: 157/500 (31.4%)
+  Federal-gov: 8.4% (high vs real ~3%)
+  Hours=45: 53, Hours=50: 52
+  All validations passed.
+
+Batch 9:
+  Income: 76.2/23.8 | Private: 72.6% | Hours=40: 158/500 (31.6%)
+  Hours=45: 59, Hours=50: 40
+  All validations passed.
+
+Batch 10:
+  Income: 75.4/24.6 | Private: 72.6% | Hours=40: 179/500 (35.8%)
+  Hours=45: 61, Hours=50: 45
+  All validations passed.
+
+================================================================
+KEY OBSERVATIONS (vs Constrained Prompt)
+================================================================
+
+                        Constrained      Unconstrained     Real
+Income <=50K:           ~75%             69-76% (varies)   76%
+Private workclass:      ~75.6%           ~71.5%            69.7%
+Hours=40:               ~46%             ~31-41%           46.7%
+Hours=45/50:            ~15 each         ~50-70 each       much lower
+Federal-gov:            ~3.8%            ~6-8%             2.9%
+
+Across all batches:
+  Exact matches: 0
+  Duplicates: 0
+  Missing values: 0
+  Education mismatches: 0
+
+Key Finding:
+Without distribution constraints, Claude:
+  - Cannot concentrate hours-per-week at 40 (31-41% vs real 47%)
+  - Overrepresents hours=45 and hours=50 significantly
+  - Shows more batch-to-batch variance in income split
+  - Overrepresents Federal-gov workclass
+  - Marginals are structurally valid but statistically looser
+  - Sample rows alone are insufficient to teach precise frequencies
