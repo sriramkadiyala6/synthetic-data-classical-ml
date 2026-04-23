@@ -3,8 +3,9 @@ import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV
 import sys
+import xgboost
 sys.path.append("../lib")
 from preprocess import (
     import_adult, preprocess_adult, preprocess_adult_encoder,
@@ -36,18 +37,29 @@ CREDIT_CTGAN = "../data/Synthetic/CTGAN/credit_ctgan.csv"
 HEART_CTGAN = "../data/Synthetic/CTGAN/heart_ctgan.csv"
 
 # ============ CONFIG ============
-SEEDS = [42, 123, 456, 789, 1001]
+#SEEDS = [42] 
+SEEDS = [42, 123, 456, 789, 1001] # TODO UNCOMMENT
 RATIOS = [1.0, 0.75, 0.5, 0.25, 0.0]
 FULL_TRAIN_SIZE = 5000
-LOW_DATA_FRACTION = 0.10
+LOW_DATA_FRACTION = 0.1
+LOW_DATA_MAX = 500
+LOW_DATA_MIN_HEART = 30
 
 results = []
 
-
 def run_experiments(dataset_name, X_real_train, y_real_train, X_test, y_test,
                     synthetic_sources, train_size, regime):
+    
+    hyper_params_selected = False
+    N_ESTIMATORS = None
+    MAX_DEPTH = None
+    LEARNING_RATE = None
+    SUBSAMPLE = None
+    COLSAMPLE_BYTREE = None
+
     """Run all ratio x method x seed experiments for a single dataset/regime."""
     for method_name, X_synth, y_synth in synthetic_sources:
+
         for ratio in RATIOS:
             for seed in SEEDS:
                 try:
@@ -73,8 +85,51 @@ def run_experiments(dataset_name, X_real_train, y_real_train, X_test, y_test,
                     X_train_scaled = scaler.fit_transform(X_train)
                     X_test_scaled = scaler.transform(X_test)
 
-                    # Train
-                    model = LogisticRegression(max_iter=1000, random_state=seed)
+                    # 5-fold cross validation
+                    # Only find hyper paramters once per model, based on teh natural training data
+                    if not hyper_params_selected:
+                        param_grid = {
+                            #"n_estimators": [50],
+                            "n_estimators": [50, 100, 150, 200, 300, 400, 500], # TODO UNCOMMENT
+                            "max_depth": [2, 3, 4],
+                            #"learning_rate": [0.05],
+                            "learning_rate": [0.01, 0.03, 0.05, 0.07, 0.09, 0.1, 0.15, 0.2], # TODO UNCOMMENT
+                            "subsample": [0.5, 0.6, 0.7, 0.8, 0.9],
+                            "colsample_bytree": [0.5, 0.6, 0.7, 0.8, 0.9]
+                        }
+
+                        search = GridSearchCV(
+                            xgboost.XGBClassifier(eval_metric="logloss"),
+                            param_grid,
+                            cv=5,               # 5-fold cross-validation
+                            scoring="accuracy",
+                            n_jobs=-1,           # use all CPU cores
+                            #verbose=2
+                        )
+
+                        search.fit(X_train_scaled, y_train)
+                        hparams = search.best_params_
+
+                        N_ESTIMATORS = hparams['n_estimators']
+                        MAX_DEPTH = hparams['max_depth']
+                        LEARNING_RATE = hparams['learning_rate']
+                        SUBSAMPLE = hparams['subsample']
+                        COLSAMPLE_BYTREE = hparams['colsample_bytree']
+
+                        hyper_params_selected = True
+                        print(f"Selected hyper paramters: {hparams}")
+
+                    # Define and train the model
+                    model = xgboost.XGBClassifier(
+                        n_estimators=N_ESTIMATORS,       # number of trees
+                        max_depth=MAX_DEPTH,            # depth of each tree
+                        learning_rate=LEARNING_RATE,      # step size shrinkage
+                        subsample=SUBSAMPLE,          # fraction of samples per tree
+                        colsample_bytree=COLSAMPLE_BYTREE,   # fraction of features per tree
+                        #use_label_encoder=False,
+                        eval_metric="logloss",
+                        random_state=seed
+                    )
                     model.fit(X_train_scaled, y_train)
 
                     # Evaluate
@@ -128,12 +183,10 @@ run_experiments("adult", X_real_enc, y_real, X_test_enc, y_test,
                 synthetic_sources, FULL_TRAIN_SIZE, "full")
 
 # Low data regime
-low_n = min(int(len(X_real_enc) * LOW_DATA_FRACTION), 500)
-
+low_n = min(int(len(X_real_enc) * LOW_DATA_FRACTION), LOW_DATA_MAX)
 X_real_low, y_real_low = sample_n_rows(X_real_enc, y_real, low_n, seed=42)
 run_experiments("adult", X_real_low, y_real_low, X_test_enc, y_test,
                 synthetic_sources, low_n * 2, "low")
-
 
 # ============ CREDIT ============
 print("=" * 60)
@@ -154,8 +207,7 @@ X_llm_c_enc = preprocess_credit_encoder(X_llm_c, encoder)
 X_llm_s, y_llm_s = import_credit_synthetic(CREDIT_LLM_SAMPLE)
 X_llm_s_enc = preprocess_credit_encoder(X_llm_s, encoder)
 
-X_ctgan_raw, y_ctgan = load_ctgan(CREDIT_CTGAN)
-X_ctgan = preprocess_credit_encoder(X_ctgan_raw, encoder)
+X_ctgan, y_ctgan = load_ctgan(CREDIT_CTGAN)
 
 synthetic_sources = [
     ("llm_constrained", X_llm_c_enc, y_llm_c),
@@ -166,7 +218,7 @@ synthetic_sources = [
 run_experiments("credit", X_real_enc, y_real, X_test_enc, y_test,
                 synthetic_sources, FULL_TRAIN_SIZE, "full")
 
-low_n = min(int(len(X_real_enc) * LOW_DATA_FRACTION), 500)
+low_n = min(int(len(X_real_enc) * LOW_DATA_FRACTION), LOW_DATA_MAX)
 X_real_low, y_real_low = sample_n_rows(X_real_enc, y_real, low_n, seed=42)
 run_experiments("credit", X_real_low, y_real_low, X_test_enc, y_test,
                 synthetic_sources, low_n * 2, "low")
@@ -191,8 +243,7 @@ X_llm_c_enc = preprocess_heart_encoder(X_llm_c, encoder)
 X_llm_s, y_llm_s = import_heart_synthetic(HEART_LLM_SAMPLE)
 X_llm_s_enc = preprocess_heart_encoder(X_llm_s, encoder)
 
-X_ctgan_raw, y_ctgan = load_ctgan(HEART_CTGAN)
-X_ctgan = preprocess_heart_encoder(X_ctgan_raw, encoder)
+X_ctgan, y_ctgan = load_ctgan(HEART_CTGAN)
 
 synthetic_sources = [
     ("llm_constrained", X_llm_c_enc, y_llm_c),
@@ -205,7 +256,7 @@ heart_train_size = min(FULL_TRAIN_SIZE, len(X_real_enc) * 5)
 run_experiments("heart", X_real_enc, y_real, X_test_enc, y_test,
                 synthetic_sources, heart_train_size, "full")
 
-low_n = min(max(int(len(X_real_enc) * LOW_DATA_FRACTION), 30), 500)
+low_n = max(int(len(X_real_enc) * LOW_DATA_FRACTION), LOW_DATA_MIN_HEART)
 X_real_low, y_real_low = sample_n_rows(X_real_enc, y_real, low_n, seed=42)
 run_experiments("heart", X_real_low, y_real_low, X_test_enc, y_test,
                 synthetic_sources, low_n * 2, "low")

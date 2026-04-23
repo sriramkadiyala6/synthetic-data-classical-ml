@@ -5,6 +5,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
 from sklearn.model_selection import train_test_split
 import sys
+from sklearn.neural_network import MLPClassifier
+
 sys.path.append("../lib")
 from preprocess import (
     import_adult, preprocess_adult, preprocess_adult_encoder,
@@ -74,7 +76,8 @@ def run_experiments(dataset_name, X_real_train, y_real_train, X_test, y_test,
                     X_test_scaled = scaler.transform(X_test)
 
                     # Train
-                    model = LogisticRegression(max_iter=1000, random_state=seed)
+                    model = MLPClassifier(hidden_layer_sizes=(128, 64), activation='relu', solver='adam', alpha=1e-4, batch_size='auto', learning_rate_init=1e-3, max_iter=200, early_stopping=True, n_iter_no_change=10, random_state=seed)
+
                     model.fit(X_train_scaled, y_train)
 
                     # Evaluate
@@ -84,7 +87,7 @@ def run_experiments(dataset_name, X_real_train, y_real_train, X_test, y_test,
                     results.append({
                         "dataset": dataset_name,
                         "regime": regime,
-                        "model": "logistic_regression",
+                        "model": "mlp",
                         "method": method_name,
                         "ratio": ratio,
                         "seed": seed,
@@ -213,5 +216,5 @@ run_experiments("heart", X_real_low, y_real_low, X_test_enc, y_test,
 
 # ============ SAVE ============
 results_df = pd.DataFrame(results)
-results_df.to_csv("results_logistic_regression.csv", index=False)
+results_df.to_csv("results_mlp.csv", index=False)
 print(f"\nDone. {len(results_df)} results saved.")
