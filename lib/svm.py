@@ -132,7 +132,8 @@ run_experiments("adult", X_real_enc, y_real, X_test_enc, y_test,
                 synthetic_sources, FULL_TRAIN_SIZE, "full")
 
 # Low data regime
-low_n = int(len(X_real_enc) * LOW_DATA_FRACTION)
+low_n = min(int(len(X_real_enc) * LOW_DATA_FRACTION), 500)
+
 X_real_low, y_real_low = sample_n_rows(X_real_enc, y_real, low_n, seed=42)
 run_experiments("adult", X_real_low, y_real_low, X_test_enc, y_test,
                 synthetic_sources, low_n * 2, "low")
@@ -157,7 +158,8 @@ X_llm_c_enc = preprocess_credit_encoder(X_llm_c, encoder)
 X_llm_s, y_llm_s = import_credit_synthetic(CREDIT_LLM_SAMPLE)
 X_llm_s_enc = preprocess_credit_encoder(X_llm_s, encoder)
 
-X_ctgan, y_ctgan = load_ctgan(CREDIT_CTGAN)
+X_ctgan_raw, y_ctgan = load_ctgan(CREDIT_CTGAN)
+X_ctgan = preprocess_credit_encoder(X_ctgan_raw, encoder)
 
 synthetic_sources = [
     ("llm_constrained", X_llm_c_enc, y_llm_c),
@@ -168,7 +170,7 @@ synthetic_sources = [
 run_experiments("credit", X_real_enc, y_real, X_test_enc, y_test,
                 synthetic_sources, FULL_TRAIN_SIZE, "full")
 
-low_n = int(len(X_real_enc) * LOW_DATA_FRACTION)
+low_n = min(int(len(X_real_enc) * LOW_DATA_FRACTION), 500)
 X_real_low, y_real_low = sample_n_rows(X_real_enc, y_real, low_n, seed=42)
 run_experiments("credit", X_real_low, y_real_low, X_test_enc, y_test,
                 synthetic_sources, low_n * 2, "low")
@@ -193,7 +195,8 @@ X_llm_c_enc = preprocess_heart_encoder(X_llm_c, encoder)
 X_llm_s, y_llm_s = import_heart_synthetic(HEART_LLM_SAMPLE)
 X_llm_s_enc = preprocess_heart_encoder(X_llm_s, encoder)
 
-X_ctgan, y_ctgan = load_ctgan(HEART_CTGAN)
+X_ctgan_raw, y_ctgan = load_ctgan(HEART_CTGAN)
+X_ctgan = preprocess_heart_encoder(X_ctgan_raw, encoder)
 
 synthetic_sources = [
     ("llm_constrained", X_llm_c_enc, y_llm_c),
@@ -206,10 +209,10 @@ heart_train_size = min(FULL_TRAIN_SIZE, len(X_real_enc) * 5)
 run_experiments("heart", X_real_enc, y_real, X_test_enc, y_test,
                 synthetic_sources, heart_train_size, "full")
 
-low_n = max(int(len(X_real_enc) * LOW_DATA_FRACTION), 30)
+low_n = min(max(int(len(X_real_enc) * LOW_DATA_FRACTION), 30), 500)
 X_real_low, y_real_low = sample_n_rows(X_real_enc, y_real, low_n, seed=42)
 run_experiments("heart", X_real_low, y_real_low, X_test_enc, y_test,
-                synthetic_sources, low_n * 3, "low")
+                synthetic_sources, low_n * 2, "low")
 
 
 # ============ SAVE ============
