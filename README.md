@@ -1,3 +1,7 @@
+## BLUF: For graders, instructions for running code is under section "## How to Reproduce Results"
+
+
+
 # Does LLM-Generated Synthetic Data Help or Hurt Classical ML Training?
 
 **CSCI 567 -- Machine Learning | Spring 2026 | University of Southern California**
@@ -131,8 +135,13 @@ synthetic-data-classical-ml/
 
 **Note:** Due to the post-experiment reorganization, scripts may need path adjustments to run. See git history for original paths.
 
-Each model script in `lib/` runs all 450 experimental conditions (3 datasets x 2 regimes x 3 methods x 5 ratios x 5 seeds):
+To generate CTGAN data:
+```bash
+cd scripts
+python generate_ctgan.py
+```
 
+Each model script in `lib/` runs all 450 experimental conditions (3 datasets x 2 regimes x 3 methods x 5 ratios x 5 seeds):
 ```bash
 cd lib
 python logistic_regression.py    # outputs results_logistic_regression.csv
@@ -143,7 +152,7 @@ python mlp.py                    # outputs results_mlp.csv
 
 To generate plots from results:
 ```bash
-python scripts/analysis.py
+python scripts/analysis.py results/results_svm.csv     # or other results file, creates analysis_out directory & files
 ```
 
 ### Dependencies
