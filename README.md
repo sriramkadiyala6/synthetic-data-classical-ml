@@ -1,157 +1,180 @@
-# Does Training on LLM-Generated Synthetic Data Help or Hurt Classical ML?
+# Does LLM-Generated Synthetic Data Help or Hurt Classical ML Training?
 
-**CSCI 567 — Machine Learning | Spring 2026 | University of Southern California**
+**CSCI 567 -- Machine Learning | Spring 2026 | University of Southern California**
 
 ## Team
-- Emon Steadman (esteadma@usc.edu)
 - Sriram Kadiyala (skadiyal@usc.edu)
+- Emon Steadman (esteadma@usc.edu)
 - FNU Nisarga Bhaskar (nisargab@usc.edu)
 - Vikash Churiwala (vchuriwa@usc.edu)
 
 ---
 
+**Note:** The repository was reorganized for readability after all experiments were completed. As a result, relative file paths referenced in the scripts under `lib/` may not resolve correctly if re-run from the current directory structure. All experimental results (CSVs and plots) are included in the repo and were generated prior to reorganization. Refer to the git history for the original working directory layout.
+
+---
+
 ## Overview
 
-The "model collapse" phenomenon — where models trained on synthetic data degrade over generations — is well-studied for large language models. But what happens when you use LLM-generated synthetic data to train *classical* ML models like logistic regression, SVMs, or XGBoost? This project systematically investigates whether LLM-generated synthetic tabular data can substitute for, augment, or ultimately hurt classical ML performance compared to real data and traditional synthetic data generation methods.
-
-## Research Questions
-
-1. Does training classical ML models on LLM-generated synthetic tabular data help, hurt, or match training on real data?
-2. How does the answer change with dataset size, synthetic-to-real ratio, and model type?
-3. How does LLM-generated synthetic data compare against traditional synthetic data methods like SMOTE?
+We systematically investigate whether LLM-generated synthetic tabular data can substitute for, augment, or hurt classical ML performance compared to real data and CTGAN as a traditional baseline. We compare two LLM prompting strategies (distribution-constrained and sample-based) across five real-to-synthetic mixing ratios in both full-data and low-data regimes.
 
 ## Datasets
 
-We evaluate across three well-known tabular classification datasets from the UCI Machine Learning Repository:
-
 | Dataset | Samples | Features | Task |
 |---------|---------|----------|------|
-| [Adult Income](https://archive.ics.uci.edu/dataset/2/adult) | ~48,842 | 14 | Income >50K prediction |
-| [Default of Credit Card Clients](https://archive.ics.uci.edu/dataset/350/default+of+credit+card+clients) | 30,000 | 23 | Default prediction |
-| [Heart Disease](https://archive.ics.uci.edu/dataset/45/heart+disease) | ~303 | 13 | Disease presence prediction |
-
-## Synthetic Data Generation Methods
-
-### LLM-Based Generation
-- **Model:** Claude Sonnet 4.6 (via Anthropic API)
-- **Approach:** Structured prompting with schema descriptions, feature distributions, and sample rows to generate realistic synthetic tabular data
-- **Validation:** Statistical checks on generated data (range validation, distribution matching, inter-column relationship preservation)
-
-### Traditional Method
-- **SMOTE** (Synthetic Minority Oversampling Technique) — interpolation-based oversampling via `imbalanced-learn`
+| [Adult Income](https://archive.ics.uci.edu/dataset/2/adult) | 48,842 | 14 | Income >50K prediction |
+| [Credit Card Default](https://archive.ics.uci.edu/dataset/350/default+of+credit+card+clients) | 30,000 | 23 | Default prediction |
+| [Heart Disease](https://archive.ics.uci.edu/dataset/45/heart+disease) | 303 | 13 | Disease presence prediction |
 
 ## Models
 
-| Model | Library | Course Topic |
-|-------|---------|--------------|
-| Logistic Regression | scikit-learn | Linear Models, Regularization |
-| SVM (RBF Kernel) | scikit-learn | Kernel Methods, SVM |
-| XGBoost | xgboost | Decision Trees, Boosting, Ensembles |
-| MLP (Multi-Layer Perceptron) | scikit-learn / PyTorch | Neural Networks |
+| Model | Implementation |
+|-------|---------------|
+| Logistic Regression | scikit-learn LogisticRegression (lbfgs, max_iter=1000) |
+| SVM | scikit-learn LinearSVC (max_iter=10000) |
+| XGBoost | xgboost (5-fold CV for hyperparameter selection) |
+| MLP | Two hidden layers (128, 64), ReLU, Adam, early stopping |
 
-## Experimental Design
+## Synthetic Data Generation
 
-### Notation
-- **RD** = Real Data
-- **SD** = Synthetic Data (LLM-generated or SMOTE)
+| Method | Description |
+|--------|-------------|
+| LLM-Constrained | Claude Opus 4.6 prompted with schema + explicit distribution targets |
+| LLM-Sample | Claude Opus 4.6 prompted with schema + 100 real sample rows, no distribution constraints |
+| CTGAN | Conditional Tabular GAN trained on real data |
 
-### Experiment 1: Full Data Regime (Substitution)
-All real training data is available. We test whether replacing portions with synthetic data changes performance.
-
-| Condition | RD : SD Ratio |
-|-----------|---------------|
-| Baseline (real only) | 1.0 / 0.0 |
-| Mostly real | 0.75 / 0.25 |
-| Equal mix | 0.50 / 0.50 |
-| Mostly synthetic | 0.25 / 0.75 |
-| Synthetic only | 0.0 / 1.0 |
-
-### Experiment 2: Low Data Regime (Augmentation)
-Only a small fraction of real data is available (max of 10% of original samples or number of dimensions). We test whether adding synthetic data helps compensate.
-
-| Condition | Description |
-|-----------|-------------|
-| Baseline | Limited real data only |
-| Augmented | Limited real data + synthetic data at varying amounts |
-
-Same RD:SD ratios as Experiment 1, applied to the reduced real data pool.
-
-### Experiment 3: LLM vs SMOTE Comparison
-For each experiment above, repeat using both LLM-generated and SMOTE synthetic data to compare performance.
-
-### Hyperparameter Tuning
-- Independent cross-validation for each RD:SD ratio and synthetic method
-- Prevents unfair advantage from hyperparameters tuned on a different data condition
-
-### Evaluation
-- All models evaluated on the **same held-out real test set** (fixed 80/20 split at the start)
-- **Metrics:** Accuracy, F1 Score, AUC-ROC
-
-## Project Structure
+## Repository Structure
 
 ```
 synthetic-data-classical-ml/
-├── README.md
-├── requirements.txt
-├── data/
-│   ├── raw/                    # Original datasets
-│   ├── synthetic/
-│   │   ├── llm/                # LLM-generated synthetic data
-│   │   └── smote/              # SMOTE-generated synthetic data
-│   └── processed/              # Train/test splits
-├── notebooks/
-│   ├── 01_data_exploration.ipynb
-│   ├── 02_llm_generation.ipynb
-│   ├── 03_smote_generation.ipynb
-│   ├── 04_experiments.ipynb
-│   └── 05_analysis.ipynb
-├── src/
-│   ├── data_preprocessing.py
-│   ├── llm_generator.py
-│   ├── smote_generator.py
-│   ├── train_models.py
-│   ├── evaluate.py
-│   └── utils.py
-├── results/
-│   ├── tables/
-│   └── figures/
-└── .gitignore
+|-- README.md
+|-- requirements.txt
+|
+|-- lib/                                    # Model training scripts
+|   |-- preprocess.py                       # Data loading, encoding, splitting, mixing
+|   |-- logistic_regression.py              # LR experiments (450 runs)
+|   |-- svm.py                              # SVM experiments (450 runs)
+|   |-- xgb.py                              # XGBoost experiments (450 runs)
+|   |-- mlp.py                              # MLP experiments (450 runs)
+|   |-- template.py                         # Base template for model scripts
+|
+|-- scripts/                                # Utility and validation scripts
+|   |-- analysis.py                         # Results analysis and plotting
+|   |-- generate_ctgan.py                   # CTGAN data generation
+|   |-- ismemorizedadult.py                 # Adult synthetic data validation
+|   |-- ismemorizedDefaultofcredcard.py     # Credit synthetic data validation
+|   |-- ismemorizedHeartDisease.py          # Heart synthetic data validation
+|   |-- merge.py                            # Batch merging script
+|   |-- pick5k.py                           # Subsample to 5000 rows
+|
+|-- results/                                # Experimental results
+|   |-- results_logistic_regression.csv     # 450 LR runs
+|   |-- results_svm.csv                     # 450 SVM runs
+|   |-- results_mlp.csv                     # 450 MLP runs
+|   |-- xgboost_results.csv                 # 450 XGBoost runs
+|
+|-- plots/                                  # Result visualizations
+|   |-- logistic_regression/                # 6 plots (3 datasets x 2 regimes)
+|   |-- svm/                                # 6 plots
+|   |-- xgboost/                            # 6 plots
+|   |-- mlp/                                # 6 plots
+|
+|-- data/
+|   |-- raw/                                # Original UCI datasets
+|   |   |-- adult/
+|   |   |   |-- adult.data
+|   |   |   |-- adult.test
+|   |   |-- credit/
+|   |   |   |-- default of credit card clients.xls
+|   |   |-- heart+disease/
+|   |       |-- processed.cleveland.data
+|   |
+|   |-- Synthetic/
+|   |   |-- CTGAN/
+|   |   |   |-- adult_ctgan.csv
+|   |   |   |-- credit_ctgan.csv
+|   |   |   |-- heart_ctgan.csv
+|   |   |
+|   |   |-- LLM/
+|   |       |-- Adult Dataset Files/
+|   |       |   |-- adult_synthetic_5000.csv         # Distribution-constrained (5K rows)
+|   |       |   |-- adult_sample_combined.csv        # Sample-based (5K rows)
+|   |       |   |-- adult_synthetic_combined.csv     # Full 23K constrained rows
+|   |       |   |-- adult_sample_100.csv             # 100 sample rows used in prompt
+|   |       |   |-- adult_sample_batch_results.txt   # Batch validation log
+|   |       |   |-- Batches/                         # Individual generation batches
+|   |       |   |-- Original Dataset/                # Copy of UCI source files
+|   |       |
+|   |       |-- Default of Credit Card Holders Dataset Files/
+|   |       |   |-- credit_synthetic_combined.csv    # Distribution-constrained
+|   |       |   |-- credit_sample_combined.csv       # Sample-based
+|   |       |   |-- credit_sample_100.csv
+|   |       |   |-- credit_sample_batch_results.txt
+|   |       |   |-- Batches/
+|   |       |
+|   |       |-- Heart Disease Dataset Files/
+|   |           |-- heart_disease_synthetic_combined.csv  # Distribution-constrained
+|   |           |-- heart_sample_combined_clean.csv       # Sample-based (4,125 rows after dedup)
+|   |           |-- heart_sample_100.csv
+|   |           |-- heart_sample_batch_results.txt
+|   |           |-- Batches/
+|   |
+|   |-- Prompt_log.pdf                      # Documentation of prompts used
+|
+|-- archive/                                # Original analysis folders (pre-reorganization)
+    |-- logreg_plots/
+    |-- svm_analysis/
+    |-- xgboost/
 ```
 
-## Setup
+## How to Reproduce Results
+
+**Note:** Due to the post-experiment reorganization, scripts may need path adjustments to run. See git history for original paths.
+
+Each model script in `lib/` runs all 450 experimental conditions (3 datasets x 2 regimes x 3 methods x 5 ratios x 5 seeds):
 
 ```bash
-git clone https://github.com/<your-username>/synthetic-data-classical-ml.git
-cd synthetic-data-classical-ml
-pip install -r requirements.txt
+cd lib
+python logistic_regression.py    # outputs results_logistic_regression.csv
+python svm.py                    # outputs results_svm.csv
+python xgb.py                    # outputs xgboost_results.csv
+python mlp.py                    # outputs results_mlp.csv
+```
+
+To generate plots from results:
+```bash
+python scripts/analysis.py
 ```
 
 ### Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
 - Python 3.10+
 - scikit-learn
 - xgboost
-- imbalanced-learn (for SMOTE)
-- anthropic (for Claude API)
-- pandas, numpy, matplotlib, seaborn
+- imbalanced-learn
+- ctgan
+- pandas, numpy, matplotlib
 
-## Timeline
+## Key Findings
 
-| Milestone | Date | Deliverable |
-|-----------|------|-------------|
-| Proposal submitted | March 13, 2026 | Project proposal |
-| TA check-in presentation | Week of March 23-27, 2026 | 5-slide presentation |
-| Pre-final check-in | Week of April 20-24, 2026 | Simulations complete, preliminary results |
-| Final report | Finals week (TBD) | 5-6 page report with analysis |
+- **LLM synthetic data helps in low-data regimes:** On Heart Disease (303 rows), pure LLM synthetic data outperformed real data across all four models (e.g., 0.879 vs 0.787 accuracy for logistic regression).
+- **Diminishing returns on large datasets:** On Adult and Credit, synthetic data acts as a neutral substitute with slight degradation.
+- **CTGAN collapses on small datasets:** Near-random performance when trained on insufficient real data.
+- **Prompting strategy matters:** Distribution constraints improve marginal fidelity; sample-based prompts improve inter-column logical consistency.
+- **Model sensitivity varies:** XGBoost is most sensitive to synthetic data quality; logistic regression and SVM are more forgiving.
 
 ## References
 
-Literature Survey link: https://docs.google.com/document/d/1PcD8RcFZA7kLjwPb3R545SM0wWc5nM_gsX65Bq0AAQg/edit?usp=sharing
-
-1. Borisov, V., et al. "Language Models are Realistic Tabular Data Generators." ICLR, 2023. (GReaT)
-2. Xu, L., et al. "Modeling Tabular data using Conditional GAN." NeurIPS, 2019. (CTGAN)
-3. Chawla, N.V., et al. "SMOTE: Synthetic Minority Over-sampling Technique." JAIR, 2002.
-4. Fang, Y., et al. "Large Language Models on Tabular Data — A Survey." arXiv:2402.17944, 2024.
-5. Singh, A., et al. "Are LLMs Naturally Good at Synthetic Tabular Data Generation?" arXiv:2406.14541, 2024.
+1. Borisov, V., et al. "Language Models are Realistic Tabular Data Generators." ICLR, 2023.
+2. Xu, L., et al. "Modeling Tabular Data using Conditional GAN." NeurIPS, 2019.
+3. Seedat, N., et al. "Curated LLM: Synergy of LLMs and Data Curation for Tabular Augmentation in Ultra Low-Data Regimes." NeurIPS, 2024.
+4. Grinsztajn, L., et al. "Why Do Tree-Based Models Still Outperform Deep Learning on Typical Tabular Data?" NeurIPS, 2022.
+5. Xu, D., et al. "Are LLMs Naturally Good at Synthetic Tabular Data Generation?" arXiv:2406.14541, 2024.
+6. Chen, T. and Guestrin, C. "XGBoost: A Scalable Tree Boosting System." KDD, 2016.
 
 ## License
 

@@ -15,25 +15,25 @@ from preprocess import (
 
 # ============ PATHS ============
 # Raw UCI data
-ADULT_TRAIN_PATH = "./data/raw/adult/adult.data"
-ADULT_TEST_PATH = "./data/raw/adult/adult.test"
-CREDIT_PATH = "./data/raw/credit/default of credit card clients.csv"
-HEART_PATH = "./data/raw/heart+disease/processed.cleveland.data"
+ADULT_TRAIN_PATH = "../data/raw/adult/adult.data"
+ADULT_TEST_PATH = "../data/raw/adult/adult.test"
+CREDIT_PATH = "../data/raw/credit/default of credit card clients.csv"
+HEART_PATH = "../data/raw/heart+disease/processed.cleveland.data"
 
 # LLM synthetic — distribution constrained
-ADULT_LLM_CONSTRAINED = "./data/Synthetic/LLM/Adult Dataset Files/adult_synthetic_5000.csv"
-CREDIT_LLM_CONSTRAINED = "./data/Synthetic/LLM/Default of Credit Card Holders Dataset Files/credit_synthetic_combined.csv"
-HEART_LLM_CONSTRAINED = "./data/Synthetic/LLM/Heart Disease Dataset Files/heart_disease_synthetic_combined.csv"
+ADULT_LLM_CONSTRAINED = "../data/Synthetic/LLM/Adult Dataset Files/adult_synthetic_5000.csv"
+CREDIT_LLM_CONSTRAINED = "../data/Synthetic/LLM/Default of Credit Card Holders Dataset Files/credit_synthetic_combined.csv"
+HEART_LLM_CONSTRAINED = "../data/Synthetic/LLM/Heart Disease Dataset Files/heart_disease_synthetic_combined.csv"
 
 # LLM synthetic — sample rows, no constraints
-ADULT_LLM_SAMPLE = "./data/Synthetic/LLM/Adult Dataset Files/adult_sample_combined.csv"
-CREDIT_LLM_SAMPLE = "./data/Synthetic/LLM/Default of Credit Card Holders Dataset Files/credit_sample_combined.csv"
-HEART_LLM_SAMPLE = "./data/Synthetic/LLM/Heart Disease Dataset Files/heart_sample_combined_clean.csv"
+ADULT_LLM_SAMPLE = "../data/Synthetic/LLM/Adult Dataset Files/adult_sample_combined.csv"
+CREDIT_LLM_SAMPLE = "../data/Synthetic/LLM/Default of Credit Card Holders Dataset Files/credit_sample_combined.csv"
+HEART_LLM_SAMPLE = "../data/Synthetic/LLM/Heart Disease Dataset Files/heart_sample_combined_clean.csv"
 
 # CTGAN
-ADULT_CTGAN = "./data/Synthetic/CTGAN/adult_ctgan.csv"
-CREDIT_CTGAN = "./data/Synthetic/CTGAN/credit_ctgan.csv"
-HEART_CTGAN = "./data/Synthetic/CTGAN/heart_ctgan.csv"
+ADULT_CTGAN = "../data/Synthetic/CTGAN/adult_ctgan.csv"
+CREDIT_CTGAN = "../data/Synthetic/CTGAN/credit_ctgan.csv"
+HEART_CTGAN = "../data/Synthetic/CTGAN/heart_ctgan.csv"
 
 # ============ CONFIG ============
 SEEDS = [42, 123, 456, 789, 1001]
@@ -217,5 +217,5 @@ run_experiments("heart", X_real_low, y_real_low, X_test_enc, y_test,
 
 # ============ SAVE ============
 results_df = pd.DataFrame(results)
-results_df.to_csv("results_svm.csv", index=False)
+results_df.to_csv("../results/results_svm.csv", index=False)
 print(f"\nDone. {len(results_df)} results saved.")

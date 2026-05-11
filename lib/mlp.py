@@ -216,5 +216,5 @@ run_experiments("heart", X_real_low, y_real_low, X_test_enc, y_test,
 
 # ============ SAVE ============
 results_df = pd.DataFrame(results)
-results_df.to_csv("results_mlp.csv", index=False)
+results_df.to_csv("../results/results_mlp.csv", index=False)
 print(f"\nDone. {len(results_df)} results saved.")

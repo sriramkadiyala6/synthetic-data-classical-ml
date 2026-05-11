@@ -139,7 +139,7 @@ def run_experiments(dataset_name, X_real_train, y_real_train, X_test, y_test,
                     results.append({
                         "dataset": dataset_name,
                         "regime": regime,
-                        "model": "logistic_regression",
+                        "model": "xgboost",
                         "method": method_name,
                         "ratio": ratio,
                         "seed": seed,
@@ -264,5 +264,5 @@ run_experiments("heart", X_real_low, y_real_low, X_test_enc, y_test,
 
 # ============ SAVE ============
 results_df = pd.DataFrame(results)
-results_df.to_csv("results_logistic_regression.csv", index=False)
+results_df.to_csv("../results/xgboost_results.csv", index=False)
 print(f"\nDone. {len(results_df)} results saved.")
