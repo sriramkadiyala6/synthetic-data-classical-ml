@@ -182,7 +182,7 @@ pip install -r requirements.txt
 2. Xu, L., et al. "Modeling Tabular Data using Conditional GAN." NeurIPS, 2019.
 3. Seedat, N., et al. "Curated LLM: Synergy of LLMs and Data Curation for Tabular Augmentation in Ultra Low-Data Regimes." NeurIPS, 2024.
 4. Grinsztajn, L., et al. "Why Do Tree-Based Models Still Outperform Deep Learning on Typical Tabular Data?" NeurIPS, 2022.
-5. Xu, D., et al. "Are LLMs Naturally Good at Synthetic Tabular Data Generation?" arXiv:2406.14541, 2024.
+5. Xu, S., et al. "Why LLMs Are Bad at Synthetic Table Generation (and what to do about it)" arXiv:2406.14541, 2024
 6. Chen, T. and Guestrin, C. "XGBoost: A Scalable Tree Boosting System." KDD, 2016.
 
 ## License
